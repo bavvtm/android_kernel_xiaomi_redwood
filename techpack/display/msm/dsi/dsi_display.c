@@ -27,6 +27,9 @@
 #include "mi_dsi_display.h"
 #include "mi_disp_print.h"
 
+#ifdef CONFIG_DRM_SDE_EXPO
+#include "sde_expo_dim_layer.h"
+#endif
 
 #define to_dsi_display(x) container_of(x, struct dsi_display, host)
 #define INT_BASE_10 10
@@ -50,6 +53,8 @@ static struct dsi_display_boot_param boot_displays[MAX_DSI_ACTIVE_DISPLAY] = {
 	{.boot_param = dsi_display_primary},
 	{.boot_param = dsi_display_secondary},
 };
+
+struct dsi_display *main_display;
 
 char *mi_dsi_display_get_cmdline_panel_info(struct dsi_display *display)
 {
@@ -291,6 +296,11 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 		       dsi_display->name, rc);
 		goto error;
 	}
+
+#ifdef CONFIG_DRM_SDE_EXPO
+	if (bl_lvl && !panel->spec_pdata->aod_mode)
+		bl_temp = expo_map_dim_level((u32)bl_temp, dsi_display);
+#endif
 
 	rc = dsi_panel_set_backlight(panel, (u32)bl_temp);
 	if (rc)
@@ -7271,6 +7281,7 @@ int dsi_display_get_modes(struct dsi_display *display,
 exit:
 	*out_modes = display->modes;
 	rc = 0;
+	main_display = display;
 
 error:
 	if (rc)
@@ -8933,6 +8944,10 @@ int dsi_display_unprepare(struct dsi_display *display)
 
 	SDE_EVT32(SDE_EVTLOG_FUNC_EXIT);
 	return rc;
+}
+
+struct dsi_display *get_main_display(void) {
+	return main_display;
 }
 
 void __init dsi_display_register(void)
