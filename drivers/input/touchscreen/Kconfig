@@ -1333,6 +1333,8 @@ source "drivers/input/touchscreen/synaptics_dsx/Kconfig"
 
 source "drivers/input/touchscreen/nt36xxx/Kconfig"
 
+source "drivers/input/touchscreen/focaltech_3680/Kconfig"
+
 source "drivers/input/touchscreen/gt9916_m20/Kconfig"
 
 source "drivers/input/touchscreen/xiaomi/Kconfig"
