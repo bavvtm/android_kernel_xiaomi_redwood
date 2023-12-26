@@ -2306,6 +2306,7 @@ static void fsg_disable(struct usb_function *f)
 		usb_ep_disable(fsg->bulk_in);
 		fsg->bulk_in_enabled = 0;
 	}
+	
 	if (fsg->bulk_out_enabled) {
 		usb_ep_disable(fsg->bulk_out);
 		fsg->bulk_out_enabled = 0;
