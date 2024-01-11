@@ -149,3 +149,9 @@ x509.genkey
 
 # vendor device tree directories
 arch/arm/boot/dts/vendor
+
+# local build temp
+/out/
+/zip/
+build.sh
+build-*.sh
