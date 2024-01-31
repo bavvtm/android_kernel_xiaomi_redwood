@@ -989,6 +989,9 @@ struct dwc3_request {
 #define DWC3_REQUEST_STATUS_COMPLETED	3
 #define DWC3_REQUEST_STATUS_UNKNOWN	-1
 
+/* Add the suitable Feedback status to interface*/
+#define DWC3_REQUEST_STATUS_DEQUEUED        5
+
 	u8			epnum;
 	struct dwc3_trb		*trb;
 	dma_addr_t		trb_dma;
