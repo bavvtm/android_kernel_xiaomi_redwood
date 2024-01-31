@@ -1,19 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
- * USB Driver for DTP
+ * Gadget Function Driver for DTP
  *
- * Copyright (C) 2020 xiaomi, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Author: Deng yong jian <dengyongjian@xiaomi.com>
  *
- * This software is licensed under the terms of the GNU General Public
- * License version 2, as published by the Free Software Foundation, and
- * may be copied, distributed, and modified under those terms.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
  */
+
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/input.h>
@@ -88,22 +81,27 @@ static struct usb_dtp *_usb_dtp = NULL;
 static const char device_name[] = "usb_" DRIVER_NAME;
 
 static const struct usb_device_id id_tables[] = {
-	{.match_flags = USB_DEVICE_ID_MATCH_INT_NUMBER|USB_DEVICE_ID_MATCH_INT_CLASS|USB_DEVICE_ID_MATCH_INT_SUBCLASS,
+	{.match_flags = USB_DEVICE_ID_MATCH_INT_NUMBER
+					| USB_DEVICE_ID_MATCH_INT_CLASS
+					| USB_DEVICE_ID_MATCH_INT_SUBCLASS,
 		.bInterfaceClass = USB_CLASS_VENDOR_SPEC,
 		.bInterfaceSubClass = USB_SUBCLASS_VENDOR_SPEC,
 		.bInterfaceNumber = MAX_INTERFACE_NUM,
 	},
 	{ }
 };
+MODULE_DEVICE_TABLE(usb, id_tables);
 
 static inline struct usb_dtp *get_usb_dtp(void)
 {
 	return _usb_dtp;
 }
 
-static int send_ctrlrequest(struct usb_device *udev, __u8 request, __u8 type, __u16 value, void *data, __u16 size)
+static int send_ctrlrequest(struct usb_device *udev, __u8 request,
+				__u8 type, __u16 value, void *data, __u16 size)
 {
 	log_dbg("value %d\n", value);
+
 	return usb_control_msg(udev, usb_rcvctrlpipe(udev, 0),
 			request,		/* __u8 request      */
 			type,			/* __u8 request type */
@@ -120,7 +118,8 @@ static int set_devicet_status(struct usb_dtp *drv, u16 status)
 	int size = sizeof(int);
 	int ret = 0;
 
-	ret = send_ctrlrequest(drv->udev, REQUEST_SET_DEVICE_STATUS,  USB_TYPE_VENDOR | USB_DIR_IN, status, data, size);
+	ret = send_ctrlrequest(drv->udev, REQUEST_SET_DEVICE_STATUS,
+					USB_TYPE_VENDOR | USB_DIR_IN, status, data, size);
 	log_dbg("ret %d, data 0x%x\n", ret, *data);
 
 	if (ret == size)
@@ -131,9 +130,9 @@ static int set_devicet_status(struct usb_dtp *drv, u16 status)
 
 static inline int atomic_try_down(atomic_t *refcnt)
 {
-	if (atomic_inc_return(refcnt) == 1) {
+	if (atomic_inc_return(refcnt) == 1)
 		return 0;
-	} else {
+	else {
 		atomic_dec(refcnt);
 		return -1;
 	}
@@ -154,9 +153,7 @@ static ssize_t usb_read(struct file *fp, char __user *userbuf, size_t count, lof
 	int ret = 0;
 	int xfer = 0;
 
-
 	down_read(&drv->io_rwsem);
-
 	if (drv->disconnected) {
 		ret = -ENODEV;
 		goto fail;
@@ -179,12 +176,8 @@ static ssize_t usb_read(struct file *fp, char __user *userbuf, size_t count, lof
 			xfer = count;
 
 		ret = usb_bulk_msg(drv->udev,
-				      usb_rcvbulkpipe(drv->udev, drv->bulk_in->bEndpointAddress),
-				      drv->bulk_in_buffer,
-				      xfer,
-				      &bytes_read,
-				      5000);//wait for 5s, 0 for wait forever
-
+				usb_rcvbulkpipe(drv->udev, drv->bulk_in->bEndpointAddress),
+				drv->bulk_in_buffer, xfer, &bytes_read, 5000);//wait for 5s, 0 for wait forever
 		if (ret < 0) {
 			log_err("bulk msg failed, ret(%d)\n", ret);
 			break;
@@ -403,9 +396,7 @@ static void send_file_work(struct work_struct *data)
 		goto err1;
 	}
 
-
 	while (count > 0) {
-
 		xfer = (drv->bulk_out_size < count)?drv->bulk_out_size:count;
 
 		/*create a urb, and a buffer for it, and copy the data to the urb*/
@@ -432,7 +423,6 @@ static void send_file_work(struct work_struct *data)
 
 		xfer = ret;
 
-
 		/*initialize the urb properly*/
 		usb_fill_bulk_urb(urb, drv->udev,
 				  usb_sndbulkpipe(drv->udev,
@@ -453,8 +443,6 @@ static void send_file_work(struct work_struct *data)
 		   the USB core will eventually free it entirely*/
 		usb_free_urb(urb);
 		count -= xfer;
-
-
 	}
 	up_read(&drv->io_rwsem);
 	up(&drv->limit_sem);
@@ -507,21 +495,11 @@ static void receive_file_work(struct work_struct *data)
 	while (count > 0) {
 		/*do a blocking bulk read to get data from the device*/
 		retval = usb_bulk_msg(drv->udev,
-				      usb_rcvbulkpipe(drv->udev, drv->bulk_in->bEndpointAddress),
-				      drv->bulk_in_buffer,
-				      min(drv->bulk_in_size, count),
-				      &bytes_read,
-				      /*10000*/0);//wait forever
-
-		/*if the read was successful, copy the data to userspace*/
+				usb_rcvbulkpipe(drv->udev, drv->bulk_in->bEndpointAddress),
+				drv->bulk_in_buffer, min(drv->bulk_in_size, count), &bytes_read, 0);//wait forever
 		if (!retval) {
-			/*ret = vfs_write(filp, drv->bulk_in_buffer, bytes_read, &offset);*/
-			ret = -1;/*no used*/
-			if (ret != bytes_read) {
-				retval = -EIO;
-				break;
-			} else
-				retval = bytes_read;
+			retval = -EIO;
+			break;
 		}
 		count -= bytes_read;
 
@@ -540,12 +518,10 @@ static long send_receive_ioctl(struct file *fp, unsigned int code, struct dtp_fi
 	struct file *filp = NULL;
 	int ret = -EINVAL;
 
-
 	if (atomic_try_down(&drv->ioctl_refcnt)) {
 		log_err("ioctl is busy\n");
 		return -EBUSY;
 	}
-
 
 	/*hold a reference to the file while we are working with it*/
 	filp = fget(fdesc->fd);
@@ -562,11 +538,10 @@ static long send_receive_ioctl(struct file *fp, unsigned int code, struct dtp_fi
 	/*make sure write is done before parameters are read*/
 	smp_wmb();
 
-	if (code == DTP_SEND_FILE) {
+	if (code == DTP_SEND_FILE)
 		work = &drv->send_file_work;
-	} else {
+	else
 		work = &drv->receive_file_work;
-	}
 
 	/* We do the file transfer on a work queue so it will run
 	 * in kernel context, which is necessary for vfs_read and
@@ -613,7 +588,7 @@ fail:
 #ifdef CONFIG_COMPAT
 static long compat_usb_ioctl(struct file *fp, unsigned int code, unsigned long value)
 {
-	/*no used*/
+	/*no use*/
 	return 0;
 }
 #endif
@@ -658,14 +633,11 @@ static struct miscdevice usb_device = {
 	.fops = &usb_fops,
 };
 
-
 static int usb_probe(struct usb_interface *interface, const struct usb_device_id *id)
 {
 
 	struct usb_dtp *drv = NULL;
 	int ret = -ENOMEM;
-
-
 
 	drv = kzalloc(sizeof(*drv), GFP_KERNEL);
 	if (!drv) {
@@ -701,22 +673,21 @@ static int usb_probe(struct usb_interface *interface, const struct usb_device_id
 	if (!drv->bulk_in_buffer) {
 		ret = -ENOMEM;
 		log_err( "alloc bulk in buffer failed\n");
-		goto err3;
+		goto err2;
 	}
 
 	drv->ctrl_ep_buffer = kmalloc(drv->bulk_in_size, GFP_KERNEL);
-
 	if (!drv->ctrl_ep_buffer) {
 		ret = -ENOMEM;
 		log_err("alloc ctrl ep buffer failed\n");
-		goto  err4;
+		goto err3;
 	}
 
 	drv->wq = create_singlethread_workqueue("usb_dtp");
 	if (!drv->wq) {
 		ret = -ENOMEM;
 		log_err( "create work queue failed!\n");
-		goto err5;
+		goto err4;
 	}
 
 	INIT_WORK(&drv->send_file_work, send_file_work);
@@ -733,18 +704,17 @@ static int usb_probe(struct usb_interface *interface, const struct usb_device_id
 	ret = misc_register(&usb_device);
 	if (ret) {
 		log_err( "register misc device failed, ret(%d)\n", ret);
-		goto err6;
+		goto err5;
 	}
 
 	log_info( "usb dtp probe successful\n");
 	return 0;
-err6:
-	destroy_workqueue(drv->wq);
 err5:
-	kfree(drv->ctrl_ep_buffer);
+	destroy_workqueue(drv->wq);
 err4:
-	kfree(drv->bulk_in_buffer);
+	kfree(drv->ctrl_ep_buffer);
 err3:
+	kfree(drv->bulk_in_buffer);
 err2:
 	kfree(drv);
 err1:
@@ -780,6 +750,7 @@ static int usb_suspend (struct usb_interface *intf, pm_message_t message)
 	time = usb_wait_anchor_empty_timeout(&drv->submitted, 1000);
 	if (!time)
 		usb_kill_anchored_urbs(&drv->submitted);
+
 	return 0;
 }
 
@@ -790,8 +761,6 @@ static int usb_resume(struct usb_interface *intf)
 	return 0;
 }
 
-MODULE_DEVICE_TABLE(usb, id_tables);
-
 static struct usb_driver usb_dtp_driver = {
 	.name		= device_name,
 	.probe		= usb_probe,
@@ -801,10 +770,8 @@ static struct usb_driver usb_dtp_driver = {
 	.id_table	= id_tables,
 	.supports_autosuspend = 1,
 };
-
 module_usb_driver(usb_dtp_driver);
 
 MODULE_AUTHOR("Deng yongjian <dengyongjian@xiaomi.com>");
 MODULE_DESCRIPTION("USB DTP Host Driver");
 MODULE_LICENSE("GPL");
-
