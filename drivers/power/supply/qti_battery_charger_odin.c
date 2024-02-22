@@ -830,7 +830,7 @@ static int get_property_id(struct psy_state *pst,
 			return i;
 
 	if (pst->psy)
-		pr_err("No property id for property %d in psy %s\n", prop,
+		pr_info("No property id for property %d in psy %s\n", prop,
 			pst->psy->desc->name);
 
 	return -ENOENT;
@@ -1185,7 +1185,7 @@ static void handle_notification(struct battery_chg_dev *bcdev, void *data,
 		return;
 	}
 
-	pr_err("notification: %#x\n", notify_msg->notification);
+	pr_debug("notification: %#x\n", notify_msg->notification);
 
 	switch (notify_msg->notification) {
 	case BC_BATTERY_STATUS_GET:
@@ -1624,7 +1624,7 @@ static int battery_psy_set_charge_current(struct battery_chg_dev *bcdev,
 {
 	int rc;
 //	u32 fcc_ua, prev_fcc_ua;
-	pr_err("set thermal-level: %d num_thermal_levels: %d \n", val, bcdev->num_thermal_levels);
+	pr_debug("set thermal-level: %d num_thermal_levels: %d \n", val, bcdev->num_thermal_levels);
 
 	if (!bcdev->num_thermal_levels)
 		return 0;
@@ -1848,7 +1848,7 @@ static int power_supply_read_temp(struct thermal_zone_device *tzd,
 	}
 
 	*temp = batt_temp * 1000;
-	pr_err("batt_thermal temp:%d ,delta:%ld blank_state=%d chg_type=%s tl:=%d  ffc:=%d, pd_verifed:=%d r:=%d \n",
+	pr_debug("batt_thermal temp:%d ,delta:%ld blank_state=%d chg_type=%s tl:=%d  ffc:=%d, pd_verifed:=%d r:=%d \n",
 		batt_temp,delta, bcdev->blank_state, power_supply_usb_type_text[pst->prop[XM_PROP_REAL_TYPE]],
 		bcdev->curr_thermal_level, pst->prop[XM_PROP_FASTCHGMODE], pst->prop[XM_PROP_PD_VERIFED],
 		(batt_pst->prop[BATT_CHG_COUNTER]/(batt_pst->prop[BATT_CHG_FULL]/1000)));
@@ -2023,7 +2023,7 @@ static int wireless_fw_update(struct battery_chg_dev *bcdev, bool force)
 			goto out;
 
 		if ((pst->prop[BATT_CAPACITY] / 100) < 50) {
-			pr_err("Battery SOC should be at least 50%% or connect charger\n");
+			pr_info("Battery SOC should be at least 50%% or connect charger\n");
 			rc = -EINVAL;
 			goto out;
 		}
@@ -2634,14 +2634,14 @@ static ssize_t verify_digest_store(struct class *c,
 		memset(kbuf, 0, sizeof(kbuf));
 		strlcpy(kbuf, buf, 2 * BATTERY_DIGEST_LEN + 1);
 		StringToHex(kbuf, random, &i);
-		pr_err("verify_digest_store  2s:%s \n", random);
+		pr_debug("verify_digest_store  2s:%s \n", random);
 		rc = write_verify_digest_prop_id(bcdev, &bcdev->psy_list[PSY_TYPE_XM],
 				XM_PROP_VERIFY_DIGEST, random);
 	} else {
 		memset(kbuf_1s, 0, sizeof(kbuf_1s));
 		strncpy(kbuf_1s, buf, count - 1);
 		StringToHex(kbuf_1s, random_1s, &i);
-		pr_err("verify_digest_store  1s:%s \n", random_1s);
+		pr_debug("verify_digest_store  1s:%s \n", random_1s);
 		rc = write_verify_digest_prop_id(bcdev, &bcdev->psy_list[PSY_TYPE_XM],
 				XM_PROP_VERIFY_DIGEST, random_1s);
 	}
@@ -2673,7 +2673,7 @@ static ssize_t verify_digest_show(struct class *c,
 	}
 	len = strlen(buf);
 	buf[len] = '\0';
-	pr_err("verify_digest_show :%s \n", buf);
+	pr_debug("verify_digest_show :%s \n", buf);
 	return strlen(buf) + 1;
 }
 static CLASS_ATTR_RW(verify_digest);
@@ -2690,7 +2690,7 @@ static ssize_t verify_slave_flag_store(struct class *c,
 		return -EINVAL;
 
 	bcdev->slave_fg_verify_flag = val;
-	pr_err("verify_digest_flag :%d \n", val);
+	pr_debug("verify_digest_flag :%d \n", val);
 
 	return count;
 }
@@ -2719,19 +2719,19 @@ static ssize_t wls_bin_store(struct class *c,
 	static u8 fw_area = 0;
 	int i;
 
-	pr_err("buf:%s, count:%d\n", buf, count);
+	pr_debug("buf:%s, count:%d\n", buf, count);
 	if( strncmp("length:", buf, 7 ) == 0 ) {
 		if (kstrtou16( buf+7, 10, &total_length))
 		      return -EINVAL;
 		serial_number = 0;
-		pr_err("total_length:%d, serial_number:%d\n", total_length, serial_number);
+		pr_debug("total_length:%d, serial_number:%d\n", total_length, serial_number);
 	} else if( strncmp("area:", buf, 5 ) == 0 ) {
 		if (kstrtou8( buf+5, 10, &fw_area))
 		      return -EINVAL;
-		pr_err("area:%d\n", fw_area);
+		pr_debug("area:%d\n", fw_area);
 	}else {
 		for(i=0; i < count; ++i )
-		      pr_err("wls_bin_data[%d]=%x\n",serial_number*MAX_STR_LEN+i,buf[i]);
+		      pr_debug("wls_bin_data[%d]=%x\n",serial_number*MAX_STR_LEN+i,buf[i]);
 
 		for( tmp_serial=0;
 			(tmp_serial<(count+MAX_STR_LEN-1)/MAX_STR_LEN) && (serial_number<(total_length+MAX_STR_LEN-1)/MAX_STR_LEN);
@@ -2745,7 +2745,7 @@ static ssize_t wls_bin_store(struct class *c,
 							serial_number,
 							fw_area,
 							(u8 *)buf+tmp_serial*MAX_STR_LEN);
-				pr_err("total_length:%d, serial_number:%d, retry:%d\n", total_length, serial_number, retry);
+				pr_debug("total_length:%d, serial_number:%d, retry:%d\n", total_length, serial_number, retry);
 				if (rc == 0)
 				      break;
 			}
@@ -2851,7 +2851,7 @@ static ssize_t authentic_store(struct class *c,
 	if (kstrtobool(buf, &val))
 		return -EINVAL;
 	bcdev->battery_auth = val;
-	pr_err("authentic_store: %d\n", val);
+	pr_debug("authentic_store: %d\n", val);
 	rc = write_property_id(bcdev, &bcdev->psy_list[PSY_TYPE_XM],
 				XM_PROP_AUTHENTIC, val);
 	if (rc < 0)
@@ -2872,7 +2872,7 @@ static ssize_t authentic_show(struct class *c,
 	if (rc < 0)
 		return rc;
 
-	pr_err("authentic_show: %d\n", pst->prop[XM_PROP_AUTHENTIC]);
+	pr_debug("authentic_show: %d\n", pst->prop[XM_PROP_AUTHENTIC]);
 	return scnprintf(buf, PAGE_SIZE, "%u\n", pst->prop[XM_PROP_AUTHENTIC]);
 }
 static CLASS_ATTR_RW(authentic);
@@ -3172,7 +3172,7 @@ static ssize_t bt_transfer_start_store(struct class *c,
 	if (kstrtoint(buf, 10, &val))
 		return -EINVAL;
 
-	pr_err("transfer_start_store %d build: 0x%x\n", val, bcdev->hw_version_build);
+	pr_debug("transfer_start_store %d build: 0x%x\n", val, bcdev->hw_version_build);
 	switch (bcdev->hw_version_build){
 		case 0x110001:
 		case 0x10001:
@@ -3204,7 +3204,7 @@ static ssize_t bt_transfer_start_show(struct class *c,
 	rc = read_property_id(bcdev, pst, XM_PROP_BT_TRANSFER_START);
 	if (rc < 0)
 		return rc;
-	pr_err("transfer_start_show %d\n", pst->prop[XM_PROP_BT_TRANSFER_START]);
+	pr_debug("transfer_start_show %d\n", pst->prop[XM_PROP_BT_TRANSFER_START]);
 	return scnprintf(buf, PAGE_SIZE, "%u\n", pst->prop[XM_PROP_BT_TRANSFER_START]);
 }
 static CLASS_ATTR_RW(bt_transfer_start);
@@ -3352,7 +3352,7 @@ static ssize_t shutdown_delay_store(struct class *c,
 		return -EINVAL;
 
 	bcdev->shutdown_delay_en = val;
-	pr_err("use contral shutdown delay featue enable= %d\n", bcdev->shutdown_delay_en);
+	pr_debug("use contral shutdown delay featue enable= %d\n", bcdev->shutdown_delay_en);
 
 	return count;
 }
@@ -3509,7 +3509,7 @@ static ssize_t wlscharge_control_limit_store(struct class *c,
 	if (kstrtoint(buf, 10, &val))
 		return -EINVAL;
 
-	pr_err("set wireless thermal-level: %d", val);
+	pr_debug("set wireless thermal-level: %d", val);
 
 	if (bcdev->num_thermal_levels <= 0) {
 		pr_err("Incorrect num_thermal_levels\n");
@@ -3789,7 +3789,7 @@ static ssize_t power_max_show(struct class *c,
 		      usb_present = val.intval;
 		else
 		      usb_present = 0;
-		pr_err("usb_present: %d\n", usb_present);
+		pr_debug("usb_present: %d\n", usb_present);
 	}
 	if (usb_present) {
 		rc = read_property_id(bcdev, xm_pst, XM_PROP_APDO_MAX);
@@ -3797,7 +3797,7 @@ static ssize_t power_max_show(struct class *c,
 		      return rc;
 		return scnprintf(buf, PAGE_SIZE, "%u", xm_pst->prop[XM_PROP_APDO_MAX]);
 	}
-	pr_err("tx_adapter:%d\n", xm_pst->prop[XM_PROP_TX_ADAPTER]);
+	pr_debug("tx_adapter:%d\n", xm_pst->prop[XM_PROP_TX_ADAPTER]);
 #if defined(CONFIG_MI_WIRELESS)
 	switch(xm_pst->prop[XM_PROP_TX_ADAPTER])
 	{
@@ -3832,7 +3832,7 @@ static ssize_t input_suspend_store(struct class *c,
 	if (kstrtobool(buf, &val))
 		return -EINVAL;
 
-	pr_err("set charger input suspend %d\n", val);
+	pr_debug("set charger input suspend %d\n", val);
 
 	rc = write_property_id(bcdev, &bcdev->psy_list[PSY_TYPE_XM],
 				XM_PROP_INPUT_SUSPEND, val);
@@ -3870,7 +3870,7 @@ static ssize_t night_charging_store(struct class *c,
 	if (kstrtobool(buf, &val))
 		return -EINVAL;
 
-	pr_err("set charger night charging %d\n", val);
+	pr_debug("set charger night charging %d\n", val);
 
 	rc = write_property_id(bcdev, &bcdev->psy_list[PSY_TYPE_XM],
 				XM_PROP_NIGHT_CHARGING, val);
@@ -3908,7 +3908,7 @@ static ssize_t smart_batt_store(struct class *c,
 	if (kstrtoint(buf, 0, &val))
 		return -EINVAL;
 
-	pr_err("set smart batt charging %d\n", val);
+	pr_debug("set smart batt charging %d\n", val);
 
 	rc = write_property_id(bcdev, &bcdev->psy_list[PSY_TYPE_XM],
 				XM_PROP_SMART_BATT, val);
@@ -3986,7 +3986,7 @@ static void usbpd_request_vdm_cmd(struct battery_chg_dev *bcdev, enum uvdm_state
 	u32 prop_id, val = 0;
 	int rc;
 
-	pr_err("usbpd_request_vdm_cmd:cmd = %d, data = %d\n", cmd, *data);
+	pr_debug("usbpd_request_vdm_cmd:cmd = %d, data = %d\n", cmd, *data);
 	switch (cmd) {
 	case USBPD_UVDM_CHARGER_VERSION:
 		prop_id = XM_PROP_VDM_CMD_CHARGER_VERSION;
@@ -4001,19 +4001,19 @@ static void usbpd_request_vdm_cmd(struct battery_chg_dev *bcdev, enum uvdm_state
 		prop_id = XM_PROP_VDM_CMD_SESSION_SEED;
 		usbpd_sha256_bitswap32(data, USBPD_UVDM_SS_LEN);
 		val = *data;
-		pr_err("SESSION_SEED:data = %d\n", val);
+		pr_debug("SESSION_SEED:data = %d\n", val);
 		break;
 	case USBPD_UVDM_AUTHENTICATION:
 		prop_id = XM_PROP_VDM_CMD_AUTHENTICATION;
 		usbpd_sha256_bitswap32(data, USBPD_UVDM_SS_LEN);
 		val = *data;
-		pr_err("AUTHENTICATION:data = %d\n", val);
+		pr_debug("AUTHENTICATION:data = %d\n", val);
 		break;
 	case USBPD_UVDM_REVERSE_AUTHEN:
                 prop_id = XM_PROP_VDM_CMD_REVERSE_AUTHEN;
                 usbpd_sha256_bitswap32(data, USBPD_UVDM_SS_LEN);
                 val = *data;
-                pr_err("AUTHENTICATION:data = %d\n", val);
+                pr_debug("AUTHENTICATION:data = %d\n", val);
                 break;
 	case USBPD_UVDM_REMOVE_COMPENSATION:
 		prop_id = XM_PROP_VDM_CMD_REMOVE_COMPENSATION;
@@ -4570,7 +4570,7 @@ static ssize_t fg1_seal_set_store(struct class *c,
 	if (kstrtoint(buf, 0, &val))
 		return -EINVAL;
 
-	pr_err("seal set %d\n", val);
+	pr_debug("seal set %d\n", val);
 
 	rc = write_property_id(bcdev, &bcdev->psy_list[PSY_TYPE_XM],
 				XM_PROP_FG1_SEAL_SET, val);
@@ -5402,7 +5402,7 @@ static void xm_charger_debug_info_print_work(struct work_struct *work)
 			usb_present = val.intval;
 		else
 			usb_present = 0;
-		pr_err("usb_present: %d\n", usb_present);
+		pr_debug("usb_present: %d\n", usb_present);
 	} else {
 		return;
 	}
@@ -5426,7 +5426,7 @@ static void xm_charger_debug_info_print_work(struct work_struct *work)
 			pr_info("XM_PROP_AUTHENTIC = %d bcdev->battery_auth = %d, re-set battery auth\n",
 				pst->prop[XM_PROP_AUTHENTIC], bcdev->battery_auth);
 		}
-		pr_err("vbus_vol_uv: %d, ibus_ua: %d\n", vbus_vol_uv, ibus_ua);
+		pr_debug("vbus_vol_uv: %d, ibus_ua: %d\n", vbus_vol_uv, ibus_ua);
 		interval = CHARGING_PERIOD_S;
 	} else {
 		interval = DISCHARGE_PERIOD_S;
@@ -5521,7 +5521,7 @@ static int fb_notifier_callback(struct notifier_block *nb,
 
 	if (evdata && evdata->data && bcdev) {
 		blank = *(int *)(evdata->data);
-		pr_err("val:%lu,blank:%u\n", val, blank);
+		pr_debug("val:%lu,blank:%u\n", val, blank);
 
 		if ((blank == MI_DISP_DPMS_POWERDOWN ||
 			blank == MI_DISP_DPMS_LP1 || blank == MI_DISP_DPMS_LP2)) {
@@ -5757,7 +5757,7 @@ static int chg_suspend(struct device *dev)
 {
 	//struct battery_chg_dev *bcdev = dev_get_drvdata(dev);
 
-	pr_err("chg suspend\n");
+	pr_debug("chg suspend\n");
 	return 0;
 }
 
@@ -5765,7 +5765,7 @@ static int chg_resume(struct device *dev)
 {
 	//struct battery_chg_dev *bcdev = dev_get_drvdata(dev);
 
-	pr_err("chg resume\n");
+	pr_debug("chg resume\n");
 	return 0;
 }
 static const struct of_device_id battery_chg_match_table[] = {
