@@ -82,17 +82,17 @@ static int disable_regulator_3V3(void)
 	int rc = 0;
 	mutex_lock(&regulator_ocp_lock);
 	if(p_3v3_vreg == NULL) {
-		pr_err("p_3v3_vreg is null!");
+		pr_warn("p_3v3_vreg is null!");
 		mutex_unlock(&regulator_ocp_lock);
 		return 0;
 	}
 
 	if (regulator_is_enabled(p_3v3_vreg)) {
-		pr_err( "regulator_is_enabled and do powered-off\n");
+		pr_warn( "regulator_is_enabled and do powered-off\n");
 
 		rc = regulator_disable(p_3v3_vreg);
 		if (rc) {
-			pr_err("disable voltage failed\n");
+			pr_warn("disable voltage failed\n");
 			mutex_unlock(&regulator_ocp_lock);
 			return rc;
 		}
@@ -101,7 +101,7 @@ static int disable_regulator_3V3(void)
 	devm_regulator_put(p_3v3_vreg);
 	p_3v3_vreg = NULL;
 	mutex_unlock(&regulator_ocp_lock);
-	pr_err("disable_regulator_3V3 finish\n");
+	pr_warn("disable_regulator_3V3 finish\n");
 	return 0;
 }
 
@@ -113,11 +113,11 @@ static int enable_regulator_3V3(struct device *dev)
 	mutex_lock(&regulator_ocp_lock);
 	p_3v3_vreg = devm_regulator_get(dev, "l3c_vdd");
 	if (IS_ERR(p_3v3_vreg)) {
-		pr_err("fp %s: no of vreg found\n", __func__);
+		pr_warn("fp %s: no of vreg found\n", __func__);
 		mutex_unlock(&regulator_ocp_lock);
 		return PTR_ERR(p_3v3_vreg);
 	} else {
-		pr_err("fp %s: of vreg successful found\n", __func__);
+		pr_warn("fp %s: of vreg successful found\n", __func__);
 	}
 
 #if 0
@@ -150,7 +150,7 @@ static int enable_regulator_3V3(struct device *dev)
 	}
 	//p_3v3_vreg = vreg;
 	mutex_unlock(&regulator_ocp_lock);
-	pr_err("enable_regulator_3V3 finish\n");
+	pr_warn("enable_regulator_3V3 finish\n");
 	return rc;
 }
 
@@ -269,14 +269,14 @@ static int gfspi_ioctl_clk_init(struct gf_dev *data)
 	data->core_clk = clk_get(&data->spi->dev, "core_clk");
 
 	if (IS_ERR_OR_NULL(data->core_clk)) {
-		pr_err("%s: fail to get core_clk\n", __func__);
+		pr_warn("%s: fail to get core_clk\n", __func__);
 		return -EPERM;
 	}
 
 	data->iface_clk = clk_get(&data->spi->dev, "iface_clk");
 
 	if (IS_ERR_OR_NULL(data->iface_clk)) {
-		pr_err("%s: fail to get iface_clk\n", __func__);
+		pr_warn("%s: fail to get iface_clk\n", __func__);
 		clk_put(data->core_clk);
 		data->core_clk = NULL;
 		return -ENOENT;
@@ -297,14 +297,14 @@ static int gfspi_ioctl_clk_enable(struct gf_dev *data)
 	err = clk_prepare_enable(data->core_clk);
 
 	if (err) {
-		pr_err("%s: fail to enable core_clk\n", __func__);
+		pr_warn("%s: fail to enable core_clk\n", __func__);
 		return -EPERM;
 	}
 
 	err = clk_prepare_enable(data->iface_clk);
 
 	if (err) {
-		pr_err("%s: fail to enable iface_clk\n", __func__);
+		pr_warn("%s: fail to enable iface_clk\n", __func__);
 		clk_disable_unprepare(data->core_clk);
 		return -ENOENT;
 	}
@@ -558,9 +558,9 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			pr_debug("Sensor has already powered-on.\n");
 		} else {
 			status = enable_regulator_3V3(&gf_dev->spi->dev);
-			pr_err("p_3v3_vreg 001 = %p\n", p_3v3_vreg);
+			pr_warn("p_3v3_vreg 001 = %p\n", p_3v3_vreg);
 			if(status) {
-				pr_err("enable regulator failed and disable it.\n");
+				pr_warn("enable regulator failed and disable it.\n");
 				disable_regulator_3V3();
 			}
 			gf_power_on(gf_dev);
@@ -575,7 +575,7 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		if (gf_dev->device_available == 0) {
 			pr_debug("Sensor has already powered-off.\n");
 		} else {
-			pr_err("Sensor try do powered-off.\n");
+			pr_warn("Sensor try do powered-off.\n");
 			disable_regulator_3V3();
 
 			gf_power_off(gf_dev);
@@ -986,7 +986,7 @@ static int gf_probe(struct platform_device *pdev)
 		gf_dev->input = input_allocate_device();
 
 		if (gf_dev->input == NULL) {
-			pr_err("%s, failed to allocate input device\n", __func__);
+			pr_warn("%s, failed to allocate input device\n", __func__);
 			status = -ENOMEM;
 			goto error_dev;
 		}
@@ -1003,7 +1003,7 @@ static int gf_probe(struct platform_device *pdev)
 		status = input_register_device(gf_dev->input);
 
 		if (status) {
-			pr_err("failed to register input device\n");
+			pr_warn("failed to register input device\n");
 			goto error_input;
 		}
 	}
