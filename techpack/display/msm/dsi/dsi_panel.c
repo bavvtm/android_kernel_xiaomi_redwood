@@ -392,7 +392,7 @@ static int dsi_panel_power_off(struct dsi_panel *panel)
 	if (gpio_is_valid(panel->reset_config.disp_en_gpio))
 		gpio_set_value(panel->reset_config.disp_en_gpio, 0);
 
-	if (panel->mi_cfg.panel_id == 0x4D323000360200)
+	if (panel->mi_cfg.panel_id == 0x4D323000360200 || panel->mi_cfg.panel_id == 0x4D323000420D00)
 	  mdelay(5);
 
 	if (gpio_is_valid(panel->reset_config.reset_gpio) &&
@@ -4520,7 +4520,7 @@ int dsi_panel_set_lp1(struct dsi_panel *panel)
 	}
 exit:
 	mi_dsi_update_micfg_flags(panel, PANEL_LP1);
-	if (panel->mi_cfg.panel_id == 0x4D323000360200)
+	if (panel->mi_cfg.panel_id == 0x4D323000360200 || panel->mi_cfg.panel_id == 0x4D323000420D00)
 		panel->mi_cfg.bl_enable = false;
 	panel->mi_cfg.bl_wait_frame = false;
 	mutex_unlock(&panel->panel_lock);
@@ -4996,7 +4996,7 @@ int dsi_panel_post_enable(struct dsi_panel *panel)
 error:
 	mutex_unlock(&panel->panel_lock);
 
-	if (panel->mi_cfg.panel_id == 0x4D323000360200)
+	if (panel->mi_cfg.panel_id == 0x4D323000360200 || panel->mi_cfg.panel_id == 0x4D323000420D00)
 		dsi_panel_gamma_switch(panel);
 
 	return rc;

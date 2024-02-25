@@ -493,7 +493,10 @@ int mi_sde_connector_fod_hbm_fence(struct drm_connector *connector)
 
 	mi_cfg = &dsi_display->panel->mi_cfg;
 
-	if (mi_cfg->panel_id == 0x4B394400360200 || mi_cfg->panel_id == 0x4B394400420d00 || mi_cfg->panel_id == 0x4D323000360200) {
+	if (mi_cfg->panel_id == 0x4B394400360200
+			|| mi_cfg->panel_id == 0x4B394400420d00
+			|| mi_cfg->panel_id == 0x4D323000360200
+			|| mi_cfg->panel_id == 0x4D323000420D00) {
 		if (!(c_conn->mi_layer_state.mi_layer_type & MI_DIMLAYER_AOD)) {
 			if (c_conn->lp_mode == SDE_MODE_DPMS_ON)
 				mi_cfg->bl_enable = true;
@@ -501,7 +504,7 @@ int mi_sde_connector_fod_hbm_fence(struct drm_connector *connector)
 				sde_enc->ready_kickoff = true;
 				if (sde_enc->prepare_kickoff) {
 					SDE_ATRACE_BEGIN("set_backlight_after_aod");
-					if (mi_cfg->panel_id == 0x4D323000360200) {
+					if (mi_cfg->panel_id == 0x4D323000360200 || mi_cfg->panel_id == 0x4D323000420D00) {
 						if (mi_cfg->last_bl_level > 0)
 						dsi_display_set_backlight(connector, dsi_display, mi_cfg->last_bl_level);
 					} else {

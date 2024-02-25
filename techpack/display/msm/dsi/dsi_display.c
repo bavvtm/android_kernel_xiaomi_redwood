@@ -1371,7 +1371,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 			display->panel->power_mode, power_mode,
 			rc ? "failed" : "successful");
 
-	if (display->panel->mi_cfg.panel_id == 0x4D323000360200)
+	if (display->panel->mi_cfg.panel_id == 0x4D323000360200 || display->panel->mi_cfg.panel_id == 0x4D323000420D00)
 		wake_up_interruptible_all(&dd_ptr->pending_wq);
 
 	if (!rc) {
@@ -8563,7 +8563,7 @@ int dsi_display_enable(struct dsi_display *display)
 		goto error;
 	}
 
-	if (display->panel->mi_cfg.panel_id == 0x4D323000360200) {
+	if (display->panel->mi_cfg.panel_id == 0x4D323000360200 || display->panel->mi_cfg.panel_id == 0x4D323000420D00) {
 		rc = dsi_panel_gamma_switch(display->panel);
 		if (rc)
 			DSI_ERR("failed to swith gamma, rc=%d\n", rc);

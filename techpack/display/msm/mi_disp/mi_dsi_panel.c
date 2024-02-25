@@ -195,7 +195,9 @@ bool is_backlight_set_skip(struct dsi_panel *panel, u32 bl_lvl)
 			return true;
 		}
 	} else if ((panel->mi_cfg.panel_id == 0x4B394400360200
-                   || panel->mi_cfg.panel_id == 0x4B394400420d00 || panel->mi_cfg.panel_id == 0x4D323000360200)
+							|| panel->mi_cfg.panel_id == 0x4B394400420d00
+							|| panel->mi_cfg.panel_id == 0x4D323000360200
+							|| panel->mi_cfg.panel_id == 0x4D323000420D00)
 			&& !panel->mi_cfg.bl_enable) {
 		return true;
 	}
@@ -1620,7 +1622,7 @@ int mi_dsi_panel_set_doze_brightness(struct dsi_panel *panel,
 					mi_dsi_update_micfg_flags(panel, PANEL_DOZE_LOW);
 				} else
 					doze_bl = doze_brightness;
-				if (panel->mi_cfg.panel_id == 0x4D323000360200) {
+				if (panel->mi_cfg.panel_id == 0x4D323000360200 || panel->mi_cfg.panel_id == 0x4D323000420D00) {
 					if (doze_bl != 0)
 					rc = mi_dsi_panel_set_aod_brightness(panel, (u16)doze_bl, BRIGHTNESS_NORMAL_AOD_MODE);
 				} else {
@@ -4315,7 +4317,7 @@ int mi_dsi_panel_set_aod_brightness(struct dsi_panel *panel,
 		if (panel->power_mode != SDE_MODE_DPMS_LP1)
 			return ret;
 	} else {
-		if (panel->mi_cfg.panel_id == 0x4D323000360200) {
+		if (panel->mi_cfg.panel_id == 0x4D323000360200 || panel->mi_cfg.panel_id == 0x4D323000420D00) {
 			normal_bl = brightness;
 		} else {
 			normal_bl = (u16)panel->mi_cfg.last_bl_level;
